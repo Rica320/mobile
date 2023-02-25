@@ -22,8 +22,8 @@ jobs:
         cache-version: ["v2"]
     steps:
       # Cache Node.js packages
-      # Cache Node.js packages
       - name: Cache Node.js packages
+        id: cache-node
         uses: actions/cache@v2
         with:
           path: |
@@ -32,24 +32,50 @@ jobs:
           key: ${{ runner.os }}-node-${{ matrix.node-version }}-${{ hashFiles('**/yarn.lock') }}-${{ hashFiles('**/package-lock.json') }}
           restore-keys: |
             ${{ runner.os }}-node-${{ matrix.node-version }}-
+      # Check if cache was restored for Node.js packages
+      - name: Check if cache was restored for Node.js packages
+        run: |
+          if [ -z "${{ steps.cache-node.outputs.cache-hit }}" ]; then
+            echo "Node.js cache was not restored"
+          else
+            echo "Node.js cache was restored"
+          fi
 
       # Cache Flutter installation
       - name: Cache Flutter installation
+        id: cache-flutter
         uses: actions/cache@v2
         with:
           path: ~/Library/Caches/flutter
           key: ${{ runner.os }}-flutter-${{ hashFiles('**/pubspec.lock') }}
           restore-keys: |
             ${{ runner.os }}-flutter-
+      # Check if cache was restored for Flutter installation
+      - name: Check if cache was restored for Flutter installation
+        run: |
+          if [ -z "${{ steps.cache-flutter.outputs.cache-hit }}" ]; then
+            echo "Flutter installation cache was not restored"
+          else
+            echo "Flutter installation cache was restored"
+          fi
 
       # Cache Flutter plugins
       - name: Cache Flutter plugins
+        id: cache-plugins
         uses: actions/cache@v2
         with:
           path: .flutter-plugins
           key: ${{ runner.os }}-flutter-plugins-${{ hashFiles('**/*.dart') }}
           restore-keys: |
             ${{ runner.os }}-flutter-plugins-
+      # Check if cache was restored for Flutter plugins
+      - name: Check if cache was restored for Flutter plugins
+        run: |
+          if [ -z "${{ steps.cache-plugins.outputs.cache-hit }}" ]; then
+            echo "Flutter plugins cache was not restored"
+          else
+            echo "Flutter plugins cache was restored"
+          fi
 
       # Set up Node.js
       - name: Set up Node.js
