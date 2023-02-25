@@ -1,4 +1,4 @@
-name: Builds
+name: Builds and Tests
 
 on:
   push:
@@ -12,42 +12,68 @@ on:
 permissions: read-all
 
 jobs:
-  build:
-    name: Build ${{ matrix.target }}
-    runs-on: macos-latest
+  build-and-test:
+    name: Build and Test ${{ matrix.target }}
+    runs-on: ubuntu-latest
     strategy:
-      fail-fast: false
       matrix:
-        target: ["appbundle --debug", "ios --no-codesign"]
+        target: ["android", "ios"]
+        node-version: ["14.x"]
+        cache-version: ["v1"]
     steps:
-      # Add caching step to cache Flutter dependencies
-      - name: Cache Flutter dependencies
-        uses: actions/cache@v2
+      # Cache Node.js packages
+      - name: Cache Node.js packages
+        uses: actions/cache@${{ matrix.cache-version }}
         with:
-          path: ~/.pub-cache
+          path: |
+            ~/.npm
+            ~/.cache/yarn
+          key: ${{ runner.os }}-node-${{ matrix.node-version }}-${{ hashFiles('**/yarn.lock') }}-${{ hashFiles('**/package-lock.json') }}
+          restore-keys: |
+            ${{ runner.os }}-node-${{ matrix.node-version }}-
+
+      # Cache Flutter installation
+      - name: Cache Flutter installation
+        uses: actions/cache@${{ matrix.cache-version }}
+        with:
+          path: ~/Library/Caches/flutter
           key: ${{ runner.os }}-flutter-${{ hashFiles('**/pubspec.lock') }}
           restore-keys: |
             ${{ runner.os }}-flutter-
 
-      - name: Set up JDK 17
-        uses: actions/setup-java@v3
+      # Cache Flutter plugins
+      - name: Cache Flutter plugins
+        uses: actions/cache@${{ matrix.cache-version }}
         with:
-          java-version: 17
-          distribution: temurin
+          path: .flutter-plugins
+          key: ${{ runner.os }}-flutter-plugins-${{ hashFiles('**/*.dart') }}
+          restore-keys: |
+            ${{ runner.os }}-flutter-plugins-
 
-      - name: Install Flutter
-        uses: subosito/flutter-action@v2
+      # Set up Node.js
+      - name: Set up Node.js
+        uses: actions/setup-node@v2-beta
         with:
-          channel: stable
-      - run: flutter doctor -v
+          node-version: ${{ matrix.node-version }}
+          cache: "npm"
+          registry-url: "https://registry.npmjs.org"
 
-      - name: Checkout mobile code
-        uses: actions/checkout@v3
-
+      # Install dependencies
       - name: Install dependencies
-        run: flutter pub get
+        run: |
+          yarn install --frozen-lockfile
+          flutter pub get
 
-      - name: Code generation
-        run: flutter pub run build_runner build
-
-      - run: flutter build ${{ matrix.target }}
+      # Build and test
+      - name: Build and test
+        run: |
+          case ${{ matrix.target }} in
+            android)
+              flutter build apk
+              flutter test test/unit_tests.dart
+              ;;
+            ios)
+              flutter build ios
+              flutter test test/unit_tests.dart
+              ;;
+          esac
