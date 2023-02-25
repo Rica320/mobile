@@ -19,11 +19,12 @@ jobs:
       matrix:
         target: ["android", "ios"]
         node-version: ["14.x"]
-        cache-version: ["v1"]
+        cache-version: ["v2"]
     steps:
       # Cache Node.js packages
+      # Cache Node.js packages
       - name: Cache Node.js packages
-        uses: actions/cache@${{ matrix.cache-version }}
+        uses: actions/cache@v2
         with:
           path: |
             ~/.npm
@@ -34,7 +35,7 @@ jobs:
 
       # Cache Flutter installation
       - name: Cache Flutter installation
-        uses: actions/cache@${{ matrix.cache-version }}
+        uses: actions/cache@v2
         with:
           path: ~/Library/Caches/flutter
           key: ${{ runner.os }}-flutter-${{ hashFiles('**/pubspec.lock') }}
@@ -43,7 +44,7 @@ jobs:
 
       # Cache Flutter plugins
       - name: Cache Flutter plugins
-        uses: actions/cache@${{ matrix.cache-version }}
+        uses: actions/cache@v2
         with:
           path: .flutter-plugins
           key: ${{ runner.os }}-flutter-plugins-${{ hashFiles('**/*.dart') }}
