@@ -19,6 +19,15 @@ jobs:
     steps:
       - uses: actions/checkout@v3
 
+      # Add caching step to cache Flutter dependencies
+      - name: Cache Flutter dependencies
+        uses: actions/cache@v2
+        with:
+          path: ~/.pub-cache
+          key: ${{ runner.os }}-flutter-${{ hashFiles('**/pubspec.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-flutter-
+
       - uses: subosito/flutter-action@v2
         with:
           channel: stable
@@ -44,4 +53,3 @@ jobs:
 
       - name: Run unit tests
         run: flutter test
-
